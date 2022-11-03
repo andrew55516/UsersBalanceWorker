@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+
+  pgdb:
+    image: "postgres:12"
+    container_name: "pgdb"
+    environment:
+      - POSTGRES_USER=db_user
+      - POSTGRES_PASSWORD=pwd123
+    ports:
+      - "54320:5432"
+    volumes:
+      - ./users/data:/var/lib/postgresql/data
