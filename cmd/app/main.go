@@ -5,7 +5,7 @@ import (
 	"UsersBalanceWorker/internal/balanceWorker"
 	"UsersBalanceWorker/internal/conn"
 	"UsersBalanceWorker/internal/db"
-	"UsersBalanceWorker/pkg/helpers/bind"
+	"UsersBalanceWorker/internal/helpers/bind"
 	"UsersBalanceWorker/pkg/helpers/pg"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -76,7 +76,7 @@ func main() {
 			return
 		}
 
-		if err := bind.IsBindedCredit(cr); err != nil {
+		if err := bind.RightBindedCredit(cr); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"msg": err.Error(),
 			})
@@ -91,7 +91,7 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"msg": "OK",
+			"msg": "ok",
 		})
 	})
 
@@ -104,7 +104,7 @@ func main() {
 			return
 		}
 
-		if err := bind.IsBindedBalance(b); err != nil {
+		if err := bind.RightBindedBalance(b); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"msg": err.Error(),
 			})
@@ -134,7 +134,7 @@ func main() {
 			return
 		}
 
-		if err := bind.IsBindedService(s); err != nil {
+		if err := bind.RightBindedService(s); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"msg": err.Error(),
 			})
@@ -142,22 +142,22 @@ func main() {
 		}
 
 		if err := balanceWorker.Service(s, Db); err != nil {
-			if errors.Is(err, db.NotEnoughMoney) {
+			switch {
+			case errors.Is(err, db.NotEnoughMoney):
 				c.JSON(http.StatusOK, gin.H{
 					"msg": db.NotEnoughMoney.Error(),
 				})
-				return
-			}
 
-			if errors.Is(err, db.DuplicateError) {
+			case errors.Is(err, db.DuplicateError):
 				c.JSON(http.StatusBadRequest, gin.H{
-					"msg": "duplicates: order with this id already exists",
+					"msg": db.DuplicateError.Error(),
 				})
-				return
+
+			default:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": err.Error(),
+				})
 			}
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"msg": err.Error(),
-			})
 			return
 		}
 
@@ -168,15 +168,111 @@ func main() {
 	})
 
 	r.POST("/transfer", func(c *gin.Context) {
-		// TODO: transfer user to user
+		var t entities.Transfer
+		if err := c.ShouldBindJSON(&t); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		if err := bind.RightBindedTransfer(t); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		if err := balanceWorker.Transfer(t, Db); err != nil {
+			switch {
+			case errors.Is(err, db.NotEnoughMoney):
+				c.JSON(http.StatusOK, gin.H{
+					"msg": db.NotEnoughMoney.Error(),
+				})
+
+			default:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": err.Error(),
+				})
+			}
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "ok",
+		})
 	})
 
 	r.POST("/orderStatus", func(c *gin.Context) {
-		// TODO order status failed
+		var ord entities.OrderStatus
+		if err := c.ShouldBindJSON(&ord); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		if err := bind.RightBindedStatus(ord); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		if err := balanceWorker.OrderStatus(ord, Db); err != nil {
+			switch {
+			case errors.Is(err, db.DoesNotExistError):
+				c.JSON(http.StatusBadRequest, gin.H{
+					"msg": db.DoesNotExistError.Error(),
+				})
+
+			case errors.Is(err, db.DoneOrderError):
+				c.JSON(http.StatusBadRequest, gin.H{
+					"msg": db.DoneOrderError.Error(),
+				})
+
+			default:
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"msg": err.Error(),
+				})
+			}
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "ok",
+		})
+
 	})
 
 	r.POST("/record", func(c *gin.Context) {
-		// TODO get record for needed period
+		var rec entities.Record
+		if err := c.ShouldBindJSON(&rec); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		if err := bind.RightBindedRecord(rec); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		link, err := balanceWorker.Record(rec, Db)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"msg":    "ok",
+			"record": link,
+		})
 	})
 
 	r.POST("/history", func(c *gin.Context) {

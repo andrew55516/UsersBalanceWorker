@@ -13,6 +13,15 @@ type UsersInstance struct {
 
 var NotEnoughMoney = errors.New("not enough money")
 
+func (i *UsersInstance) Ping() error {
+	_, err := i.Db.Exec(context.Background(), ";")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (i *UsersInstance) createUser(username string, balance float64) error {
 	_, err := i.Db.Exec(context.Background(), "INSERT INTO users (username, balance) VALUES ($1, $2);", username, balance)
 	if err != nil {

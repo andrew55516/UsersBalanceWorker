@@ -30,3 +30,22 @@ func Connection(cfg *pg.Config) (*pgxpool.Pool, error) {
 
 	return conn, nil
 }
+
+//func Ping(db *entities.Db) error {
+//	_, err := db.Users.Db.Exec(context.Background(), ";")
+//	if err != nil {
+//		return err
+//	}
+//
+//	_, err = db.Services.Db.Exec(context.Background(), ";")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	_, err = db.Record.Db.Exec(context.Background(), ";")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	return nil
+//}

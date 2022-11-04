@@ -1,6 +1,10 @@
 package entities
 
-import "UsersBalanceWorker/internal/db"
+import (
+	"UsersBalanceWorker/internal/db"
+	"fmt"
+	"strconv"
+)
 
 type User struct {
 	ID       int     `json:"user_id"`
@@ -46,11 +50,30 @@ type Service struct {
 	Cost      float64 `json:"cost"`
 }
 
-type Record struct {
-	ID         int     `json:"record_id"`
+type Transfer struct {
 	UserFromID int     `json:"user_from_id"`
 	UserToID   int     `json:"user_to_id"`
-	ServiceID  int     `json:"service_id"`
 	Value      float64 `json:"value"`
-	Status     string  `json:"status"`
+}
+
+type OrderStatus struct {
+	OrderID int    `json:"order_id"`
+	Status  string `json:"status"`
+}
+
+type Record struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
+type Account struct {
+	ServiceID    int
+	ServiceName  string
+	TotalRevenue float64
+}
+
+func (a *Account) ToSlice() []string {
+	id := strconv.Itoa(a.ServiceID)
+	revenue := fmt.Sprintf("%f", a.TotalRevenue)
+	return []string{id, a.ServiceName, revenue}
 }
