@@ -53,13 +53,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	Db := &entities.Db{
+	Db := &balanceWorker.DB{
 		Users:    db.UsersInstance{Db: users},
 		Services: db.ServicesInstance{Db: services},
 		Record:   db.RecordInstance{Db: record},
 	}
 
 	r := gin.Default()
+
+	r.Static("/records", "records")
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -276,7 +278,33 @@ func main() {
 	})
 
 	r.POST("/history", func(c *gin.Context) {
-		// TODO get user payments history for needed period
+		var h entities.History
+		if err := c.ShouldBindJSON(&h); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		if err := bind.RightBindedHistory(h); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		userHistory, err := balanceWorker.History(h, Db)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"msg": err.Error(),
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"msg":          "ok",
+			"user_history": userHistory,
+		})
 	})
 
 	log.Fatal(r.Run())

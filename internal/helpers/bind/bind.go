@@ -123,3 +123,16 @@ func RightBindedRecord(binded entities.Record) error {
 
 	return nil
 }
+
+func RightBindedHistory(binded entities.History) error {
+	def := entities.History{}
+	if binded.UserID == def.UserID {
+		return DataError
+	}
+
+	if binded.UserID <= 1 {
+		return UserIDError
+	}
+
+	return nil
+}

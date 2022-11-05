@@ -1,11 +1,20 @@
 package db
 
 import (
+	"UsersBalanceWorker/entities"
 	"UsersBalanceWorker/pkg/helpers/e"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
+	"sync"
+	"time"
+)
+
+const (
+	DefComFrom = "transfer from user"
+	DefComTo   = "transfer to user"
 )
 
 type RecordInstance struct {
@@ -13,13 +22,25 @@ type RecordInstance struct {
 }
 
 type Update struct {
-	UserID int
-	Value  float64
+	ServiceID int
+	UserID    int
+	Value     float64
 }
 
 type AccountUnit struct {
 	ServiceID int
 	Value     float64
+}
+
+type CreditUnit struct {
+	Value float64
+	Time  time.Time
+}
+
+type TransferUnit struct {
+	Value   float64
+	Time    time.Time
+	Comment string
 }
 
 var DuplicateError = errors.New("duplicates: order with this id already exists")
@@ -35,10 +56,10 @@ func (i *RecordInstance) Ping() error {
 	return nil
 }
 
-func (i *RecordInstance) CreditRecord(userID int, value float64, status string) error {
+func (i *RecordInstance) CreditRecord(cr entities.Credit, status string) error {
 
 	_, err := i.Db.Exec(context.Background(), "INSERT INTO credit_record (user_id, value, status) VALUES ($1, $2, $3);",
-		userID, value, status)
+		cr.UserID, cr.Value, status)
 	if err != nil {
 		return e.Wrap("can't create credit record", err)
 	}
@@ -46,13 +67,13 @@ func (i *RecordInstance) CreditRecord(userID int, value float64, status string) 
 	return nil
 }
 
-func (i *RecordInstance) ServiceRecord(orderID int, serviceID int, userID int, value float64, status string) error {
-	if err := i.checkDuplicates(orderID); err != nil {
+func (i *RecordInstance) ServiceRecord(s entities.Service, status string) error {
+	if err := i.checkDuplicates(s.OrderID); err != nil {
 		return e.Wrap("can't create service record", err)
 	}
 
 	_, err := i.Db.Exec(context.Background(), "INSERT INTO service_record (id, service_id, user_id, value, status) VALUES ($1, $2, $3, $4, $5);",
-		orderID, serviceID, userID, value, status)
+		s.OrderID, s.ServiceID, s.UserID, s.Cost, status)
 	if err != nil {
 		return e.Wrap("can't create service record", err)
 	}
@@ -60,9 +81,9 @@ func (i *RecordInstance) ServiceRecord(orderID int, serviceID int, userID int, v
 	return nil
 }
 
-func (i *RecordInstance) TransferRecord(userFromID int, userToID int, value float64, status string) error {
-	_, err := i.Db.Exec(context.Background(), "INSERT INTO transfer_record (user_from_id, user_to_id, value, status) VALUES ($1, $2, $3, $4);",
-		userFromID, userToID, value, status)
+func (i *RecordInstance) TransferRecord(t entities.Transfer, comment string, status string) error {
+	_, err := i.Db.Exec(context.Background(), "INSERT INTO transfer_record (user_from_id, user_to_id, value, comment, status) VALUES ($1, $2, $3, $4, $5);",
+		t.UserFromID, t.UserToID, t.Value, comment, status)
 	if err != nil {
 		return e.Wrap("can't create transfer record", err)
 	}
@@ -71,7 +92,7 @@ func (i *RecordInstance) TransferRecord(userFromID int, userToID int, value floa
 }
 
 func (i *RecordInstance) UpdateServiceRecord(orderID int, status string) (*Update, error) {
-	rows, err := i.Db.Query(context.Background(), "SELECT value, user_id, status FROM service_record WHERE id = $1", orderID)
+	rows, err := i.Db.Query(context.Background(), "SELECT service_id, user_id, value, status FROM service_record WHERE id = $1", orderID)
 	defer rows.Close()
 
 	if err != nil {
@@ -82,7 +103,7 @@ func (i *RecordInstance) UpdateServiceRecord(orderID int, status string) (*Updat
 	var stat string
 
 	if rows.Next() {
-		if err := rows.Scan(&upd.Value, &upd.UserID, &stat); err != nil {
+		if err := rows.Scan(&upd.ServiceID, &upd.UserID, &upd.Value, &stat); err != nil {
 			return nil, e.Wrap("can't update service record", err)
 		}
 	} else {
@@ -135,4 +156,88 @@ func (i *RecordInstance) checkDuplicates(id int) error {
 	}
 
 	return nil
+}
+
+func (i *RecordInstance) CreditHistory(UserID int) ([]CreditUnit, error) {
+	rows, err := i.Db.Query(context.Background(), "SELECT value, time FROM credit_record WHERE user_id = $1 AND status = 'ok';", UserID)
+	defer rows.Close()
+
+	if err != nil {
+		return nil, e.Wrap("can't get credit history", err)
+	}
+
+	history := make([]CreditUnit, 0)
+
+	for rows.Next() {
+		var unit CreditUnit
+		err = rows.Scan(&unit.Value, &unit.Time)
+		if err != nil {
+			log.Println(err)
+		}
+
+		history = append(history, unit)
+	}
+
+	return history, nil
+}
+
+func (i *RecordInstance) TransferHistory(UserID int) ([]TransferUnit, []TransferUnit, error) {
+	rowsTo, err := i.Db.Query(context.Background(), "SELECT user_to_id, value, comment, time FROM transfer_record WHERE user_from_id = $1 AND status = 'ok';", UserID)
+	defer rowsTo.Close()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rowsFrom, err := i.Db.Query(context.Background(), "SELECT user_from_id, value, comment, time FROM transfer_record WHERE user_to_id = $1 AND status = 'ok';", UserID)
+	defer rowsFrom.Close()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var wg sync.WaitGroup
+
+	transferFrom := make([]TransferUnit, 0)
+	transferTo := make([]TransferUnit, 0)
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		for rowsTo.Next() {
+			var unit TransferUnit
+			var id int
+			err := rowsTo.Scan(&id, &unit.Value, &unit.Comment, &unit.Time)
+			if err != nil {
+				log.Println(err)
+			}
+
+			if unit.Comment == "" {
+				unit.Comment = fmt.Sprintf("%s #%d", DefComTo, id)
+			}
+
+			transferTo = append(transferTo, unit)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for rowsFrom.Next() {
+			var unit TransferUnit
+			var id int
+			err := rowsFrom.Scan(&id, &unit.Value, &unit.Comment, &unit.Time)
+			if err != nil {
+				log.Println(err)
+			}
+
+			if unit.Comment == "" {
+				unit.Comment = fmt.Sprintf("%s #%d", DefComFrom, id)
+			}
+
+			transferFrom = append(transferFrom, unit)
+		}
+	}()
+
+	wg.Wait()
+
+	return transferTo, transferFrom, nil
 }

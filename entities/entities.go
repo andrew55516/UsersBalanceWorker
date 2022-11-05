@@ -1,37 +1,10 @@
 package entities
 
 import (
-	"UsersBalanceWorker/internal/db"
 	"fmt"
 	"strconv"
+	"time"
 )
-
-type User struct {
-	ID       int     `json:"user_id"`
-	Username string  `json:"username"`
-	Balance  float64 `json:"balance"`
-}
-
-//type Service struct {
-//	ID          int     `json:"service_id"`
-//	ServiceName string  `json:"service_name"`
-//	Cost        float64 `json:"cost"`
-//}
-
-//type Record struct {
-//	ID         int     `json:"record_id"`
-//	UserFromID int     `json:"user_from_id"`
-//	UserToID   int     `json:"user_to_id"`
-//	ServiceID  int     `json:"service_id"`
-//	Value      float64 `json:"value"`
-//	Status     string  `json:"status"`
-//}
-
-type Db struct {
-	Users    db.UsersInstance
-	Services db.ServicesInstance
-	Record   db.RecordInstance
-}
 
 type Credit struct {
 	UserID   int     `json:"user_id"`
@@ -70,6 +43,18 @@ type Account struct {
 	ServiceID    int
 	ServiceName  string
 	TotalRevenue float64
+}
+
+type History struct {
+	UserID  int    `json:"user_id"`
+	SortBy  string `json:"sort_by"`
+	Reverse bool   `json:"reverse"`
+}
+
+type Operation struct {
+	Value   float64   `json:"value"`
+	Time    time.Time `json:"time"`
+	Comment string    `json:"comment"`
 }
 
 func (a *Account) ToSlice() []string {
