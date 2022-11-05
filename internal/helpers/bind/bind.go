@@ -6,6 +6,10 @@ import (
 	"regexp"
 )
 
+var status = map[string]struct{}{
+	"ok":     struct{}{},
+	"failed": struct{}{},
+}
 var DataError = errors.New("not enough or wrong data")
 var UserIDError = errors.New("wrong UserID")
 var ServiceIDError = errors.New("wrong ServiceID")
@@ -78,7 +82,7 @@ func RightBindedStatus(binded entities.OrderStatus) error {
 		return DataError
 	}
 
-	if binded.Status == "in process" {
+	if _, ok := status[binded.Status]; !ok {
 		return errors.New("bad order status")
 	}
 

@@ -349,7 +349,6 @@ func History(h entities.History, db *DB) ([]entities.Operation, error) {
 
 	for i := range history {
 		com := strings.Split(history[i].Comment, "#")
-		log.Println(com, len(com))
 
 		if len(com) == 2 {
 			body := strings.Trim(com[0], " ")
@@ -364,13 +363,11 @@ func History(h entities.History, db *DB) ([]entities.Operation, error) {
 
 			case strings.Contains(body, "service"):
 				if name, ok := services[id]; ok {
-					log.Println(fmt.Sprintf("%s: %s", body, name))
 					history[i].Comment = fmt.Sprintf("%s: %s", body, name)
 				}
 
 			case strings.Contains(body, "user"):
 				if name, ok := users[id]; ok {
-					log.Println(fmt.Sprintf("%s: %s", body, name))
 					history[i].Comment = fmt.Sprintf("%s: %s", body, name)
 				}
 			}
