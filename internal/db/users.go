@@ -33,7 +33,7 @@ func (i *UsersInstance) UpdateUserBalance(cr entities.Credit) error {
 
 	if !rows.Next() {
 		if cr.Value > 0 {
-			err = i.createUser(cr.Username, cr.Value)
+			err = i.createUser(cr)
 			if err != nil {
 				return e.Wrap("can't update user balance", err)
 			}
@@ -104,8 +104,8 @@ func (i *UsersInstance) Users() (map[int]string, error) {
 	return services, nil
 }
 
-func (i *UsersInstance) createUser(username string, balance float64) error {
-	_, err := i.Db.Exec(context.Background(), "INSERT INTO users (username, balance) VALUES ($1, $2);", username, balance)
+func (i *UsersInstance) createUser(cr entities.Credit) error {
+	_, err := i.Db.Exec(context.Background(), "INSERT INTO users (id, username, balance) VALUES ($1, $2, $3);", cr.UserID, cr.Username, cr.Value)
 	if err != nil {
 		return e.Wrap("can't create user", err)
 	}

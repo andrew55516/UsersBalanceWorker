@@ -192,7 +192,7 @@ func Transfer(t entities.Transfer, db *DB) error {
 
 func Record(r entities.Record, db *DB) (string, error) {
 	if err := db.Services.Ping(); err != nil {
-		return "", err
+		log.Println(err)
 	}
 
 	if err := db.Record.Ping(); err != nil {
@@ -206,7 +206,7 @@ func Record(r entities.Record, db *DB) (string, error) {
 
 	services, err := db.Services.Services()
 	if err != nil {
-		return "", err
+		log.Println(err)
 	}
 
 	revenue := make(map[int]float64, 0)
@@ -276,11 +276,11 @@ func Record(r entities.Record, db *DB) (string, error) {
 
 func History(h entities.History, db *DB) ([]entities.Operation, error) {
 	if err := db.Users.Ping(); err != nil {
-		return nil, err
+		log.Println(err)
 	}
 
 	if err := db.Services.Ping(); err != nil {
-		return nil, err
+		log.Println(err)
 	}
 
 	if err := db.Record.Ping(); err != nil {
@@ -303,7 +303,7 @@ func History(h entities.History, db *DB) ([]entities.Operation, error) {
 		op := entities.Operation{
 			Value:   cr.Value,
 			Time:    cr.Time,
-			Comment: "refill",
+			Comment: "refilling",
 		}
 		history = append(history, op)
 	}
@@ -367,7 +367,7 @@ func History(h entities.History, db *DB) ([]entities.Operation, error) {
 				}
 
 			case strings.Contains(body, "user"):
-				if name, ok := users[id]; ok {
+				if name, ok := users[id]; ok && name != "" {
 					history[i].Comment = fmt.Sprintf("%s: %s", body, name)
 				}
 			}

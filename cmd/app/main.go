@@ -188,7 +188,7 @@ func main() {
 		if err := balanceWorker.Transfer(t, Db); err != nil {
 			switch {
 			case errors.Is(err, db.NotEnoughMoney):
-				c.JSON(http.StatusOK, gin.H{
+				c.JSON(http.StatusBadRequest, gin.H{
 					"msg": db.NotEnoughMoney.Error(),
 				})
 
