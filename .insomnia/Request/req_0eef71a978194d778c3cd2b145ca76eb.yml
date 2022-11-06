@@ -1,0 +1,42 @@
+_id: req_0eef71a978194d778c3cd2b145ca76eb
+type: Request
+parentId: wrk_bdf58e2df63540b5a7b0d0d52743afdd
+modified: 1667739689508
+created: 1664879357377
+url: localhost:8080/credit
+name: credit
+description: ""
+method: POST
+body:
+  mimeType: application/json
+  text: |-
+    {"user_id": 4,
+    "username": "",
+    "value": 10000}
+parameters:
+  - name: lang
+    value: en
+    disabled: true
+    id: pair_2b43479a7de34cdab9c54858682f15fc
+headers:
+  - name: X-Gismeteo-Token
+    value: 56b30cb255.3443075
+    id: pair_e700c97813c54730a7eb59448e71fddf
+    disabled: true
+  - name: Content-Type
+    value: application/json
+    id: pair_bbc57c03824c4ea9a05763890e8828b4
+authentication:
+  type: basic
+  useISO88591: false
+  disabled: false
+  username: admin
+  password: admin
+metaSortKey: -1664879357377
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global

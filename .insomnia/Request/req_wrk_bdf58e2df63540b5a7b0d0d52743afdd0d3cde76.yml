@@ -1,0 +1,22 @@
+_id: req_wrk_bdf58e2df63540b5a7b0d0d52743afdd0d3cde76
+type: Request
+parentId: fld_wrk_bdf58e2df63540b5a7b0d0d52743afdd10f5ebe6
+modified: 1667740239528
+created: 1667740239528
+url: "{{ base_url }}/balance"
+name: Provides users balance
+description: ""
+method: POST
+body:
+  mimeType: applicatioin/json
+parameters: []
+headers: []
+authentication: {}
+metaSortKey: -1667740239528
+isPrivate: false
+settingStoreCookies: true
+settingSendCookies: true
+settingDisableRenderRequestBody: false
+settingEncodeUrl: true
+settingRebuildPath: true
+settingFollowRedirects: global
