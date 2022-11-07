@@ -14,6 +14,11 @@ var DataError = errors.New("not enough or wrong data")
 var UserIDError = errors.New("wrong UserID")
 var ServiceIDError = errors.New("wrong ServiceID")
 var OrderIDError = errors.New("wrong OrderID")
+var ValueError = errors.New("value must be positive")
+var CostError = errors.New("cost must be positive")
+var DateError = errors.New("wrong date-style")
+var StatusError = errors.New("bad order status")
+var SameIDError = errors.New("userFrom and userTo can't be the same")
 
 func RightBindedCredit(binded entities.Credit) error {
 	def := entities.Credit{}
@@ -24,7 +29,7 @@ func RightBindedCredit(binded entities.Credit) error {
 	}
 
 	if binded.Value <= 0 {
-		return errors.New("value must be positive")
+		return ValueError
 	}
 
 	if binded.UserID <= 1 {
@@ -69,7 +74,7 @@ func RightBindedService(binded entities.Service) error {
 	}
 
 	if binded.Cost <= 0 {
-		return errors.New("cost must be positive")
+		return CostError
 	}
 
 	return nil
@@ -83,7 +88,7 @@ func RightBindedStatus(binded entities.OrderStatus) error {
 	}
 
 	if _, ok := status[binded.Status]; !ok {
-		return errors.New("bad order status")
+		return StatusError
 	}
 
 	if binded.OrderID <= 0 {
@@ -102,11 +107,15 @@ func RightBindedTransfer(binded entities.Transfer) error {
 	}
 
 	if binded.Value <= 0 {
-		return errors.New("value must be positive")
+		return ValueError
 	}
 
 	if binded.UserFromID <= 1 || binded.UserToID <= 1 {
 		return UserIDError
+	}
+
+	if binded.UserFromID == binded.UserToID {
+		return SameIDError
 	}
 
 	return nil
@@ -122,7 +131,7 @@ func RightBindedRecord(binded entities.Record) error {
 
 	if !(re.MatchString(binded.From) && re.MatchString(binded.To) &&
 		len(binded.From) == 10 && len(binded.To) == 10) {
-		return DataError
+		return DateError
 	}
 
 	return nil
