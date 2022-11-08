@@ -28,7 +28,7 @@ ___
 ## Start
 ___
 - Download and sync dependencies
-- Run [Makefile](https://github.com/andrew55516/UsersBalanceWorker/blob/master/migrations/Makefile) (you need to preinstall [migrate](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate)) or manually:
+- Run [Makefile](https://github.com/andrew55516/UsersBalanceWorker/blob/master/migrations/Makefile) (you need to preinstall [migrate](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate) and add it to PATH) or manually:
   * Run [docker-compose](https://github.com/andrew55516/UsersBalanceWorker/blob/master/migrations/docker-compose.yaml)
   * Create three __Databases__: _users_, _services_, _record_
   * Run accorded sql files for each __Database__: [users](https://github.com/andrew55516/UsersBalanceWorker/blob/master/migrations/Users.sql), [services](https://github.com/andrew55516/UsersBalanceWorker/blob/master/migrations/Services.sql), [record](https://github.com/andrew55516/UsersBalanceWorker/blob/master/migrations/Record.sql)
